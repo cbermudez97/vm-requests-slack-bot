@@ -21,7 +21,7 @@ var osOptions = []string{
 }
 
 // Tier block data
-const tierBlockId = "os"
+const tierBlockId = "tier"
 
 var tierOptions = []string{
 	"Light",
@@ -58,7 +58,7 @@ func buildVMRequestModal() slack.ModalViewRequest {
 	tierOptionsElems := createOptionBlockObjects(tierOptions)
 	tierText := slack.NewTextBlockObject(slack.PlainTextType, "Select a Tier", false, false)
 	tierOption := slack.NewOptionsSelectBlockElement(slack.OptTypeStatic, nil, "Tier", tierOptionsElems...)
-	tierBlock := slack.NewInputBlock(osBlockId, tierText, tierOption)
+	tierBlock := slack.NewInputBlock(tierBlockId, tierText, tierOption)
 
 	// Additional details
 	// TODO: define additional details modal
