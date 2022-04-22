@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"io"
-	"io/ioutil"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -14,15 +12,13 @@ const requestsEndpoint = "/request-vm"
 const requestCommandStr = "/request-vm"
 
 func requests(w http.ResponseWriter, r *http.Request) {
-	signingSecret := getSigningSecret()
-	verifier, err := slack.NewSecretsVerifier(r.Header, signingSecret)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	// Verify signing secret
+	if err := verifySigningSecret(r); err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	r.Body = ioutil.NopCloser(io.TeeReader(r.Body, &verifier))
-
+	// Build command
 	rCmd, err := slack.SlashCommandParse(r)
 	if err != nil {
 		log.Error(err)
@@ -30,11 +26,7 @@ func requests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = verifier.Ensure(); err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
+	// Handle command
 	if rCmd.Command == requestCommandStr {
 		api := getApi()
 

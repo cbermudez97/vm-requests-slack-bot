@@ -13,34 +13,27 @@ import (
 const dispatcherEndpoint = "/events-endpoint"
 
 func dispatcher(w http.ResponseWriter, r *http.Request) {
-	signingSecret := getSigningSecret()
+	// Verify signing secret
+	if err := verifySigningSecret(r); err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
+	// Build event
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	sv, err := slack.NewSecretsVerifier(r.Header, signingSecret)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if _, err := sv.Write(body); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if err := sv.Ensure(); err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
 	eventsAPIEvent, err := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionNoVerifyToken())
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if eventsAPIEvent.Type == slackevents.URLVerification {
+
+	// Handle event
+	if eventsAPIEvent.Type == slackevents.URLVerification { // Url verification
 		var r *slackevents.ChallengeResponse
 		err := json.Unmarshal([]byte(body), &r)
 		if err != nil {
@@ -51,7 +44,7 @@ func dispatcher(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text")
 		w.Write([]byte(r.Challenge))
 	}
-	if eventsAPIEvent.Type == slackevents.CallbackEvent {
+	if eventsAPIEvent.Type == slackevents.CallbackEvent { // Handle inner event
 		api := getApi()
 
 		innerEvent := eventsAPIEvent.InnerEvent
