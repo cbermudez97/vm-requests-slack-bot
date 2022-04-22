@@ -2,44 +2,27 @@ package handlers
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
-	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 )
 
-func Dispatcher(w http.ResponseWriter, r *http.Request) {
-	botToken := os.Getenv("SLACK_BOT_TOKEN")
-	signingSecret := os.Getenv("SLACK_SIGNING_SECRET")
+const dispatcherEndpoint = "/events-endpoint"
 
-	api := slack.New(botToken)
+func dispatcher(w http.ResponseWriter, r *http.Request) {
+	api := getApi()
 
-	log.Infof("token: %s secret: %s", botToken, signingSecret)
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Error(err)
-		w.WriteHeader(http.StatusBadRequest)
+	body, ok := handleRequestBody(w, r)
+	if !ok {
 		return
 	}
-	sv, err := slack.NewSecretsVerifier(r.Header, signingSecret)
-	if err != nil {
-		log.Error(err)
-		w.WriteHeader(http.StatusBadRequest)
+
+	if ok := handleSigningSecret(w, r.Header, body); !ok {
 		return
 	}
-	if _, err := sv.Write(body); err != nil {
-		log.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if err := sv.Ensure(); err != nil {
-		log.Error(err)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
 	eventsAPIEvent, err := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionNoVerifyToken())
 	if err != nil {
 		log.Error(err)
@@ -64,4 +47,9 @@ func Dispatcher(w http.ResponseWriter, r *http.Request) {
 			api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
 		}
 	}
+}
+
+var DispatcherHandler = Handler{
+	Endpoint: dispatcherEndpoint,
+	Handler:  dispatcher,
 }
