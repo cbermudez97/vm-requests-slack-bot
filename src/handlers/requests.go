@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/slack-go/slack"
 )
 
@@ -22,6 +23,7 @@ func requests(w http.ResponseWriter, r *http.Request) {
 
 	rCmd, err := slack.SlashCommandParse(r)
 	if err != nil {
+		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -31,6 +33,7 @@ func requests(w http.ResponseWriter, r *http.Request) {
 
 		api.PostMessage(rCmd.ChannelID, slack.MsgOptionText("Requesting VM", false))
 	} else {
+		log.Error(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
