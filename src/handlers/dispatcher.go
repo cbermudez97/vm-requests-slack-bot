@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -12,13 +13,14 @@ import (
 const dispatcherEndpoint = "/events-endpoint"
 
 func dispatcher(w http.ResponseWriter, r *http.Request) {
-
-	body, ok := handleRequestBody(w, r)
-	if !ok {
+	if ok := verifySigningSecret(w, r); !ok {
 		return
 	}
 
-	if ok := handleSigningSecret(w, r.Header, body); !ok {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 

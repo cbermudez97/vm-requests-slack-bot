@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -9,30 +10,17 @@ import (
 	"github.com/slack-go/slack"
 )
 
-func handleRequestBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Error(err)
-		w.WriteHeader(http.StatusBadRequest)
-		return body, false
-	}
-	return body, true
-}
-
-func handleSigningSecret(w http.ResponseWriter, headers http.Header, body []byte) bool {
+func verifySigningSecret(w http.ResponseWriter, r *http.Request) bool {
 	signingSecret := getSigningSecret()
-
-	sv, err := slack.NewSecretsVerifier(headers, signingSecret)
+	sv, err := slack.NewSecretsVerifier(r.Header, signingSecret)
 	if err != nil {
-		log.Error(err)
-		w.WriteHeader(http.StatusBadRequest)
-		return false
-	}
-	if _, err := sv.Write(body); err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return false
 	}
+
+	r.Body = ioutil.NopCloser(io.TeeReader(r.Body, &sv))
+
 	if err := sv.Ensure(); err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusUnauthorized)

@@ -12,12 +12,7 @@ const requestsEndpoint = "/request-vm"
 const requestCommandStr = "/request-vm"
 
 func requests(w http.ResponseWriter, r *http.Request) {
-	body, ok := handleRequestBody(w, r)
-	if !ok {
-		return
-	}
-
-	if ok := handleSigningSecret(w, r.Header, body); !ok {
+	if ok := verifySigningSecret(w, r); !ok {
 		return
 	}
 
