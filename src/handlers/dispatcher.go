@@ -13,14 +13,24 @@ import (
 const dispatcherEndpoint = "/events-endpoint"
 
 func dispatcher(w http.ResponseWriter, r *http.Request) {
-	if ok := verifySigningSecret(w, r); !ok {
-		return
-	}
+	signingSecret := getSigningSecret()
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	sv, err := slack.NewSecretsVerifier(r.Header, signingSecret)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if _, err := sv.Write(body); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err := sv.Ensure(); err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
