@@ -12,7 +12,6 @@ import (
 const dispatcherEndpoint = "/events-endpoint"
 
 func dispatcher(w http.ResponseWriter, r *http.Request) {
-	api := getApi()
 
 	body, ok := handleRequestBody(w, r)
 	if !ok {
@@ -41,6 +40,8 @@ func dispatcher(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(r.Challenge))
 	}
 	if eventsAPIEvent.Type == slackevents.CallbackEvent {
+		api := getApi()
+
 		innerEvent := eventsAPIEvent.InnerEvent
 		switch ev := innerEvent.Data.(type) {
 		case *slackevents.AppMentionEvent:

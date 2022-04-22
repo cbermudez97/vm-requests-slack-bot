@@ -9,4 +9,5 @@ type Handler struct {
 
 var Handlers = [...]Handler{
 	DispatcherHandler,
+	RequestHandler,
 }
