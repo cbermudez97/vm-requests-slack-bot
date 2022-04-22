@@ -33,7 +33,7 @@ func requests(w http.ResponseWriter, r *http.Request) {
 
 		api.PostMessage(rCmd.ChannelID, slack.MsgOptionText("Requesting VM", false))
 	} else {
-		log.Error(err)
+		log.Errorf("Invalid command executed. Expected %s but got %s", requestCommandStr, rCmd.Command)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
