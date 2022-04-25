@@ -15,6 +15,7 @@ const dispatcherEndpoint = "/events-endpoint"
 func dispatcher(w http.ResponseWriter, r *http.Request) {
 	// Verify signing secret
 	if err := verifySigningSecret(r); err != nil {
+		log.Error(err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}

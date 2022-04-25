@@ -11,22 +11,22 @@ import (
 const requestsEndpoint = "/request-vm"
 const requestCommandStr = "/request-vm"
 
-// OS block data
-const osBlockId = "os"
+// Distribution block data
+const distBlockId = "dist"
+const distActionId = "DIST"
 
-var osOptions = []string{
-	"Ubuntu",
-	"Windows",
-	"MacOS",
+var distOptions = []string{
+	"Ubuntu 20.04",
+	"Ubunut 18.04",
 }
 
-// Tier block data
-const tierBlockId = "tier"
+// VM type block data
+const vmTypeBlockId = "tier"
+const vmTypeActionId = "Tier"
 
-var tierOptions = []string{
-	"Light",
-	"Normal",
-	"Heavy",
+var vmTypeOptions = []string{
+	"Linode 1",
+	"Linode 2",
 }
 
 func createOptionBlockObjects(options []string) []*slack.OptionBlockObject {
@@ -48,17 +48,17 @@ func buildVMRequestModal() slack.ModalViewRequest {
 	headerText := slack.NewTextBlockObject(slack.MarkdownType, "*Please fill out the request form below:*", false, false)
 	headerSection := slack.NewSectionBlock(headerText, nil, nil)
 
-	// OS input
-	osOptionsElems := createOptionBlockObjects(osOptions)
-	osText := slack.NewTextBlockObject(slack.PlainTextType, "Select an OS", false, false)
-	osOption := slack.NewOptionsSelectBlockElement(slack.OptTypeStatic, nil, "OS", osOptionsElems...)
-	osBlock := slack.NewInputBlock(osBlockId, osText, osOption)
+	// Distribution input
+	distOptionsElems := createOptionBlockObjects(distOptions)
+	distText := slack.NewTextBlockObject(slack.PlainTextType, "Select a Distribution", false, false)
+	distOption := slack.NewOptionsSelectBlockElement(slack.OptTypeStatic, nil, distActionId, distOptionsElems...)
+	distBlock := slack.NewInputBlock(distBlockId, distText, distOption)
 
-	// VM tier input
-	tierOptionsElems := createOptionBlockObjects(tierOptions)
-	tierText := slack.NewTextBlockObject(slack.PlainTextType, "Select a Tier", false, false)
-	tierOption := slack.NewOptionsSelectBlockElement(slack.OptTypeStatic, nil, "Tier", tierOptionsElems...)
-	tierBlock := slack.NewInputBlock(tierBlockId, tierText, tierOption)
+	// VM Type input
+	vmTypeOptionsElems := createOptionBlockObjects(vmTypeOptions)
+	vmTypeText := slack.NewTextBlockObject(slack.PlainTextType, "Select a VM Type", false, false)
+	vmTypeOption := slack.NewOptionsSelectBlockElement(slack.OptTypeStatic, nil, vmTypeActionId, vmTypeOptionsElems...)
+	vmTypeBlock := slack.NewInputBlock(vmTypeBlockId, vmTypeText, vmTypeOption)
 
 	// Additional details
 	// TODO: define additional details modal
@@ -67,8 +67,8 @@ func buildVMRequestModal() slack.ModalViewRequest {
 	blocks := slack.Blocks{
 		BlockSet: []slack.Block{
 			headerSection,
-			osBlock,
-			tierBlock,
+			distBlock,
+			vmTypeBlock,
 		},
 	}
 
@@ -85,6 +85,7 @@ func buildVMRequestModal() slack.ModalViewRequest {
 func requestsCreation(w http.ResponseWriter, r *http.Request) {
 	// Verify signing secret
 	if err := verifySigningSecret(r); err != nil {
+		log.Error(err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
