@@ -21,8 +21,8 @@ var distOptions = []string{
 }
 
 // VM type block data
-const vmTypeBlockId = "tier"
-const vmTypeActionId = "Tier"
+const vmTypeBlockId = "vm_type"
+const vmTypeActionId = "VM_TYPE"
 
 var vmTypeOptions = []string{
 	"Linode 1",

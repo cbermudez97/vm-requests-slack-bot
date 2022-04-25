@@ -15,8 +15,8 @@ type VMModalValues struct {
 }
 
 func buildVMModalValues(i slack.InteractionCallback) VMModalValues {
-	dist := i.View.State.Values[distBlockId][distActionId].Value
-	tier := i.View.State.Values[vmTypeBlockId][vmTypeActionId].Value
+	dist := i.View.State.Values[distBlockId][distActionId].SelectedOption.Value
+	tier := i.View.State.Values[vmTypeBlockId][vmTypeActionId].SelectedOption.Value
 
 	return VMModalValues{
 		Dist: dist,
