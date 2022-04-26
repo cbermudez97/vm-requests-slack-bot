@@ -26,7 +26,7 @@ func buildVMModalValues(i slack.InteractionCallback) VMModalValues {
 
 func sendUserNotification(api *slack.Client, i slack.InteractionCallback, modalValues VMModalValues) error {
 	msgText := fmt.Sprintf(
-		"Hi %s. Your request for a VM with:\nDistribution: %s\nType: %s\n\nhave been correctly sended.",
+		"Hi %s. Your request for a VM with:\nDistribution: %s\nType: %s\n\nhave been correctly created.",
 		i.User.Name,
 		modalValues.Dist,
 		modalValues.Type,
@@ -34,6 +34,24 @@ func sendUserNotification(api *slack.Client, i slack.InteractionCallback, modalV
 
 	_, _, err := api.PostMessage(
 		i.User.ID,
+		slack.MsgOptionText(msgText, false),
+		slack.MsgOptionAttachments(),
+	)
+	return err
+}
+
+func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, modalValues VMModalValues) error {
+	requestsChannelId := getRequestsChannel()
+
+	msgText := fmt.Sprintf(
+		"VM Request from %s.\nData:\nDistribution: %s\nType: %s\n",
+		i.User.Name,
+		modalValues.Dist,
+		modalValues.Type,
+	)
+
+	_, _, err := api.PostMessage(
+		requestsChannelId,
 		slack.MsgOptionText(msgText, false),
 		slack.MsgOptionAttachments(),
 	)
@@ -54,16 +72,26 @@ func interaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	modalValues := buildVMModalValues(i)
-	log.Info(modalValues)
+	if i.Type == slack.InteractionTypeViewSubmission {
+		modalValues := buildVMModalValues(i)
+		log.Info(modalValues)
 
-	botToken := getBotToken()
-	api := slack.New(botToken)
+		api := getApi()
 
-	//Notify user that the request is created
-	sendUserNotification(api, i, modalValues)
+		//Notify user that the request is created
+		if err := sendUserNotification(api, i, modalValues); err != nil {
+			log.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-	//TODO: send request to requests channel
+		//Send request to requests channel
+		if err := sendChannelNotification(api, i, modalValues); err != nil {
+			log.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
 }
 
 var InteractionHandler = Handler{

@@ -3,3 +3,4 @@ build/*
 # Configs
 config/slack_bot_token
 config/slack_signing_secret
+config/slack_requests_channel

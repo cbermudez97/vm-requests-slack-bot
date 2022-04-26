@@ -43,6 +43,10 @@ func getBotToken() string {
 	return os.Getenv("SLACK_BOT_TOKEN")
 }
 
+func getRequestsChannel() string {
+	return os.Getenv("SLACK_REQUESTS_CHANNEL")
+}
+
 func getApi() *slack.Client {
 	return slack.New(getBotToken())
 }
