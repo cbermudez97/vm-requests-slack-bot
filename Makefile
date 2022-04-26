@@ -20,7 +20,7 @@ run: ## run project
 all: compile config/slack_bot_token config/slack_signing_secret
 	export SLACK_BOT_TOKEN=$(shell cat ./config/slack_bot_token) && \
 	export SLACK_SIGNING_SECRET=$(shell cat ./config/slack_signing_secret) && \
-	export SLACK_REQUEST_CHANNEL=$(shell cat ./config/slack_requests_channel) && \
+	export SLACK_REQUESTS_CHANNEL=$(shell cat ./config/slack_requests_channel) && \
 	build/main
 
 
