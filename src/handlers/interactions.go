@@ -123,12 +123,21 @@ func interactions(w http.ResponseWriter, r *http.Request) {
 		case requestModalCallbackId: // Handle request modal
 			handleRequestModal(w, r, i)
 		}
-		return
 
-	} else if i.Type == slack.InteractionTypeMessageAction {
-		// TODO: message interaction
-		log.Info(i)
+	} else if i.Type == slack.InteractionTypeBlockActions {
+		switch i.BlockID {
+		case acceptOrDenyBlockID: // Handle accept or deny block callback
+			handleAcceptOrDenyCallback(w, r, i)
+		}
 	}
+}
+
+func handleAcceptOrDenyCallback(w http.ResponseWriter, r *http.Request, i slack.InteractionCallback) {
+	acceptValue := i.BlockActionState.Values[acceptOrDenyBlockID][acceptActionID].Value
+	denyValue := i.BlockActionState.Values[acceptOrDenyBlockID][denyActionID].Value
+
+	log.Infof("VM Request Block: %s %s", acceptValue, denyValue)
+	w.WriteHeader(http.StatusOK)
 }
 
 func handleRequestModal(w http.ResponseWriter, r *http.Request, i slack.InteractionCallback) {
@@ -150,6 +159,8 @@ func handleRequestModal(w http.ResponseWriter, r *http.Request, i slack.Interact
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 var InteractionHandler = Handler{
