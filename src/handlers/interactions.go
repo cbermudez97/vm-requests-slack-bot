@@ -43,6 +43,35 @@ func sendUserNotification(api *slack.Client, i slack.InteractionCallback, modalV
 		modalValues.Type,
 	)
 
+	_, _, err := api.PostMessage(
+		i.User.ID,
+		slack.MsgOptionText(msgText, false),
+	)
+	return err
+}
+
+func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, modalValues VMModalValues) error {
+	requestsChannelId := getRequestsChannel()
+
+	msgText := fmt.Sprintf(
+		"VM Request from <@%s>.\nData:\nDistribution: %s\nType: %s\n",
+		i.User.ID,
+		modalValues.Dist,
+		modalValues.Type,
+	)
+
+	// Build message block
+	messageBlock := slack.NewSectionBlock(
+		slack.NewTextBlockObject(
+			slack.MarkdownType,
+			msgText,
+			true,
+			false,
+		),
+		nil,
+		nil,
+	)
+
 	// Build actions block
 	acceptOrDenyRequestBlock := slack.NewActionBlock(
 		acceptOrDenyBlockID,
@@ -69,27 +98,8 @@ func sendUserNotification(api *slack.Client, i slack.InteractionCallback, modalV
 	)
 
 	_, _, err := api.PostMessage(
-		i.User.ID,
-		slack.MsgOptionText(msgText, false),
-		slack.MsgOptionBlocks(acceptOrDenyRequestBlock),
-	)
-	return err
-}
-
-func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, modalValues VMModalValues) error {
-	requestsChannelId := getRequestsChannel()
-
-	msgText := fmt.Sprintf(
-		"VM Request from <@%s>.\nData:\nDistribution: %s\nType: %s\n",
-		i.User.ID,
-		modalValues.Dist,
-		modalValues.Type,
-	)
-
-	_, _, err := api.PostMessage(
 		requestsChannelId,
-		slack.MsgOptionText(msgText, false),
-		slack.MsgOptionAttachments(),
+		slack.MsgOptionBlocks(messageBlock, acceptOrDenyRequestBlock),
 	)
 	return err
 }
