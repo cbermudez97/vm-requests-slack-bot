@@ -65,7 +65,7 @@ func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, mod
 		slack.NewTextBlockObject(
 			slack.MarkdownType,
 			msgText,
-			true,
+			false,
 			false,
 		),
 		nil,
