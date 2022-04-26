@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -33,6 +34,25 @@ func verifySigningSecret(r *http.Request) error {
 	}
 
 	return nil
+}
+
+func getMessageFrom(api *slack.Client, channelID, messageTs string) (slack.Message, error) {
+	conversation, err := api.GetConversationHistory(&slack.GetConversationHistoryParameters{
+		ChannelID: channelID,
+		Latest:    messageTs,
+		Limit:     1,
+		Inclusive: true,
+	})
+	if err != nil {
+		return slack.Message{}, err
+	}
+
+	if len(conversation.Messages) < 1 {
+		return slack.Message{}, fmt.Errorf("No message found on channel %s with Ts %s", channelID, messageTs)
+	}
+
+	msg := conversation.Messages[0]
+	return msg, nil
 }
 
 func getSigningSecret() string {

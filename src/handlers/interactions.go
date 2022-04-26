@@ -20,25 +20,27 @@ const denyActionID = "deny"
 const denyActionText = "Deny"
 const denyActionValue = "deny"
 
-type VMModalValues struct {
-	Dist string
-	Type string
+type VMRequestData struct {
+	Requester string
+	Dist      string
+	Type      string
 }
 
-func buildVMModalValues(i slack.InteractionCallback) VMModalValues {
+func buildVMModalValues(i slack.InteractionCallback) VMRequestData {
 	dist := i.View.State.Values[distBlockId][distActionId].SelectedOption.Value
 	tier := i.View.State.Values[vmTypeBlockId][vmTypeActionId].SelectedOption.Value
 
-	return VMModalValues{
-		Dist: dist,
-		Type: tier,
+	return VMRequestData{
+		Requester: i.User.ID,
+		Dist:      dist,
+		Type:      tier,
 	}
 }
 
-func sendUserNotification(api *slack.Client, i slack.InteractionCallback, modalValues VMModalValues) error {
+func sendUserNotification(api *slack.Client, i slack.InteractionCallback, modalValues VMRequestData) error {
 	msgText := fmt.Sprintf(
 		"Hi %s. Your request for a VM with:\n\nDistribution: %s\nType: %s\n\nhave been correctly created.",
-		i.User.RealName,
+		i.User.Name,
 		modalValues.Dist,
 		modalValues.Type,
 	)
@@ -50,7 +52,7 @@ func sendUserNotification(api *slack.Client, i slack.InteractionCallback, modalV
 	return err
 }
 
-func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, modalValues VMModalValues) error {
+func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, modalValues VMRequestData) error {
 	requestsChannelId := getRequestsChannel()
 
 	msgText := fmt.Sprintf(
@@ -75,26 +77,30 @@ func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, mod
 	// Build actions block
 	acceptOrDenyRequestBlock := slack.NewActionBlock(
 		acceptOrDenyBlockID,
-		slack.NewButtonBlockElement(
-			denyActionID,
-			denyActionValue,
-			slack.NewTextBlockObject(
+		slack.ButtonBlockElement{
+			Type:     slack.METButton,
+			ActionID: denyActionID,
+			Value:    denyActionValue,
+			Text: slack.NewTextBlockObject(
 				slack.PlainTextType,
 				denyActionText,
 				false,
 				false,
 			),
-		),
-		slack.NewButtonBlockElement(
-			acceptActionID,
-			acceptActionValue,
-			slack.NewTextBlockObject(
+			Style: slack.StyleDanger,
+		},
+		slack.ButtonBlockElement{
+			Type:     slack.METButton,
+			ActionID: acceptActionID,
+			Value:    acceptActionValue,
+			Text: slack.NewTextBlockObject(
 				slack.PlainTextType,
 				acceptActionText,
 				false,
 				false,
 			),
-		),
+			Style: slack.StylePrimary,
+		},
 	)
 
 	_, _, err := api.PostMessage(
@@ -123,25 +129,74 @@ func interactions(w http.ResponseWriter, r *http.Request) {
 		case requestModalCallbackId: // Handle request modal
 			handleRequestModal(w, r, i)
 		}
-
 	} else if i.Type == slack.InteractionTypeBlockActions {
 		for _, action := range i.ActionCallback.BlockActions {
-			switch action.ActionID {
+			switch action.ActionID { // Allow to handle more block actions
 			case acceptActionID:
 				handleAcceptCallback(w, r, i)
+				return
 			case denyActionID:
 				handleDenyCallback(w, r, i)
+				return
 			}
 		}
 	}
 }
 
+func parseRequestDataFrom(message slack.Message) (VMRequestData, error) {
+	data := VMRequestData{}
+
+	if len(message.Blocks.BlockSet) < 1 {
+		return data, fmt.Errorf("Invalid message structure")
+	}
+
+	msgTextSection := message.Blocks.BlockSet[0]
+	switch msgTextSection.(type) {
+	case slack.SectionBlock:
+		// TODO: parse data from text
+	default:
+		return data, fmt.Errorf("Invalid message structure")
+	}
+
+	return data, nil
+}
+
 func handleAcceptCallback(w http.ResponseWriter, r *http.Request, i slack.InteractionCallback) {
-	log.Infof("VM Request Block: Accepted")
+	api := getApi()
+	msgTs := i.Container.MessageTs
+	channelID := i.Container.ChannelID
+
+	// Get request data from message
+	requestMsg, err := getMessageFrom(api, channelID, msgTs)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	_, err = parseRequestDataFrom(requestMsg)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	// TODO: run creation workflow
 
-	// TODO: clear message buttons
+	// Clear message buttons
+	l := len(requestMsg.Blocks.BlockSet)
+	_, _, _, err = api.UpdateMessage(
+		channelID,
+		msgTs,
+		slack.MsgOptionBlocks(requestMsg.Blocks.BlockSet[:l-2]...),
+	)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: notify user
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -149,9 +204,11 @@ func handleAcceptCallback(w http.ResponseWriter, r *http.Request, i slack.Intera
 func handleDenyCallback(w http.ResponseWriter, r *http.Request, i slack.InteractionCallback) {
 	log.Infof("VM Request Block: Denied")
 
-	// TODO: run creation workflow
+	// TODO: run denial workflow
 
 	// TODO: clear message buttons
+
+	// TODO: notify user
 
 	w.WriteHeader(http.StatusOK)
 }
