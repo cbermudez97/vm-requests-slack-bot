@@ -9,6 +9,17 @@ import (
 	"github.com/slack-go/slack"
 )
 
+// Attachment buttons data
+const acceptOrDenyBlockID = "accept_or_deny"
+
+const acceptActionID = "accept"
+const acceptActionText = "Accept"
+const acceptActionValue = "accept"
+
+const denyActionID = "deny"
+const denyActionText = "Deny"
+const denyActionValue = "deny"
+
 type VMModalValues struct {
 	Dist string
 	Type string
@@ -26,16 +37,41 @@ func buildVMModalValues(i slack.InteractionCallback) VMModalValues {
 
 func sendUserNotification(api *slack.Client, i slack.InteractionCallback, modalValues VMModalValues) error {
 	msgText := fmt.Sprintf(
-		"Hi %s. Your request for a VM with:\nDistribution: %s\nType: %s\n\nhave been correctly created.",
-		i.User.Name,
+		"Hi %s. Your request for a VM with:\n\nDistribution: %s\nType: %s\n\nhave been correctly created.",
+		i.User.RealName,
 		modalValues.Dist,
 		modalValues.Type,
+	)
+
+	// Build actions block
+	acceptOrDenyRequestBlock := slack.NewActionBlock(
+		acceptOrDenyBlockID,
+		slack.NewButtonBlockElement(
+			denyActionID,
+			denyActionValue,
+			slack.NewTextBlockObject(
+				slack.PlainTextType,
+				denyActionText,
+				false,
+				false,
+			),
+		),
+		slack.NewButtonBlockElement(
+			acceptActionID,
+			acceptActionValue,
+			slack.NewTextBlockObject(
+				slack.PlainTextType,
+				acceptActionText,
+				false,
+				false,
+			),
+		),
 	)
 
 	_, _, err := api.PostMessage(
 		i.User.ID,
 		slack.MsgOptionText(msgText, false),
-		slack.MsgOptionAttachments(),
+		slack.MsgOptionBlocks(acceptOrDenyRequestBlock),
 	)
 	return err
 }
@@ -44,8 +80,8 @@ func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, mod
 	requestsChannelId := getRequestsChannel()
 
 	msgText := fmt.Sprintf(
-		"VM Request from %s.\nData:\nDistribution: %s\nType: %s\n",
-		i.User.Name,
+		"VM Request from <@%s>.\nData:\nDistribution: %s\nType: %s\n",
+		i.User.ID,
 		modalValues.Dist,
 		modalValues.Type,
 	)
@@ -58,7 +94,7 @@ func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, mod
 	return err
 }
 
-func interaction(w http.ResponseWriter, r *http.Request) {
+func interactions(w http.ResponseWriter, r *http.Request) {
 	if err := verifySigningSecret(r); err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -73,28 +109,40 @@ func interaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if i.Type == slack.InteractionTypeViewSubmission {
-		modalValues := buildVMModalValues(i)
-		log.Info(modalValues)
-
-		api := getApi()
-
-		//Notify user that the request is created
-		if err := sendUserNotification(api, i, modalValues); err != nil {
-			log.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+		switch i.View.CallbackID {
+		case requestModalCallbackId: // Handle request modal
+			handleRequestModal(w, r, i)
 		}
+		return
 
-		//Send request to requests channel
-		if err := sendChannelNotification(api, i, modalValues); err != nil {
-			log.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+	} else if i.Type == slack.InteractionTypeMessageAction {
+		// TODO: message interaction
+		log.Info(i)
+	}
+}
+
+func handleRequestModal(w http.ResponseWriter, r *http.Request, i slack.InteractionCallback) {
+	modalValues := buildVMModalValues(i)
+	log.Infof("VM Modal config: %s", modalValues)
+
+	api := getApi()
+
+	//Send request to requests channel
+	if err := sendChannelNotification(api, i, modalValues); err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	//Notify user that the request is created
+	if err := sendUserNotification(api, i, modalValues); err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 }
 
 var InteractionHandler = Handler{
 	Endpoint: "/interactions",
-	Handler:  interaction,
+	Handler:  interactions,
 }

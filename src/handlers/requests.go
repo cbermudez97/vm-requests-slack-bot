@@ -11,6 +11,9 @@ import (
 const requestsEndpoint = "/request-vm"
 const requestCommandStr = "/request-vm"
 
+// Modal data
+const requestModalCallbackId = "request-modal"
+
 // Distribution block data
 const distBlockId = "dist"
 const distActionId = "DIST"
@@ -74,6 +77,7 @@ func buildVMRequestModal() slack.ModalViewRequest {
 
 	// Modal
 	var modalRequest slack.ModalViewRequest
+	modalRequest.CallbackID = requestModalCallbackId
 	modalRequest.Type = slack.ViewType("modal")
 	modalRequest.Title = titleText
 	modalRequest.Close = closeText
