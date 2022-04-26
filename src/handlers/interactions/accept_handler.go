@@ -22,12 +22,14 @@ func handleAcceptCallback(w http.ResponseWriter, r *http.Request, i slack.Intera
 		return
 	}
 
-	_, err = parseRequestDataFrom(requestMsg)
+	requestData, err := parseRequestDataFrom(requestMsg)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	log.Info(requestData)
 
 	// TODO: run creation workflow
 

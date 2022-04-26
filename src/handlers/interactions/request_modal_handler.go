@@ -14,9 +14,9 @@ func buildVMModalValues(i slack.InteractionCallback) VMRequestData {
 	tier := i.View.State.Values[handlers.VMTypeBlockId][handlers.VMTypeActionId].SelectedOption.Value
 
 	return VMRequestData{
-		Requester: i.User.ID,
-		Dist:      dist,
-		Type:      tier,
+		Requester:    i.User.ID,
+		Distribution: dist,
+		Type:         tier,
 	}
 }
 
@@ -24,9 +24,9 @@ func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, mod
 	requestsChannelId := handlers.GetRequestsChannel()
 
 	msgText := fmt.Sprintf(
-		"VM Request from <@%s>.\nData:\nDistribution: %s\nType: %s\n",
+		"VM Request\n\nFrom: <@%s>\nDistribution: %s\nType: %s\n",
 		i.User.ID,
-		modalValues.Dist,
+		modalValues.Distribution,
 		modalValues.Type,
 	)
 
@@ -82,7 +82,7 @@ func sendUserNotification(api *slack.Client, i slack.InteractionCallback, modalV
 	msgText := fmt.Sprintf(
 		"Hi %s. Your request for a VM with:\n\nDistribution: %s\nType: %s\n\nhave been correctly created.",
 		i.User.Name,
-		modalValues.Dist,
+		modalValues.Distribution,
 		modalValues.Type,
 	)
 
@@ -95,7 +95,6 @@ func sendUserNotification(api *slack.Client, i slack.InteractionCallback, modalV
 
 func handleRequestModal(w http.ResponseWriter, r *http.Request, i slack.InteractionCallback) {
 	modalValues := buildVMModalValues(i)
-	log.Infof("VM Modal config: %s", modalValues)
 
 	api := handlers.GetApi()
 

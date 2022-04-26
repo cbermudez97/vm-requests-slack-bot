@@ -21,9 +21,9 @@ const denyActionText = "Deny"
 const denyActionValue = "deny"
 
 type VMRequestData struct {
-	Requester string
-	Dist      string
-	Type      string
+	Requester    string
+	Distribution string
+	Type         string
 }
 
 func interactions(w http.ResponseWriter, r *http.Request) {
