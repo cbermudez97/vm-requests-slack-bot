@@ -125,18 +125,34 @@ func interactions(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else if i.Type == slack.InteractionTypeBlockActions {
-		switch i.BlockID {
-		case acceptOrDenyBlockID: // Handle accept or deny block callback
-			handleAcceptOrDenyCallback(w, r, i)
+		for _, action := range i.ActionCallback.BlockActions {
+			switch action.ActionID {
+			case acceptActionID:
+				handleAcceptCallback(w, r, i)
+			case denyActionID:
+				handleDenyCallback(w, r, i)
+			}
 		}
 	}
 }
 
-func handleAcceptOrDenyCallback(w http.ResponseWriter, r *http.Request, i slack.InteractionCallback) {
-	acceptValue := i.BlockActionState.Values[acceptOrDenyBlockID][acceptActionID].Value
-	denyValue := i.BlockActionState.Values[acceptOrDenyBlockID][denyActionID].Value
+func handleAcceptCallback(w http.ResponseWriter, r *http.Request, i slack.InteractionCallback) {
+	log.Infof("VM Request Block: Accepted")
 
-	log.Infof("VM Request Block: %s %s", acceptValue, denyValue)
+	// TODO: run creation workflow
+
+	// TODO: clear message buttons
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func handleDenyCallback(w http.ResponseWriter, r *http.Request, i slack.InteractionCallback) {
+	log.Infof("VM Request Block: Denied")
+
+	// TODO: run creation workflow
+
+	// TODO: clear message buttons
+
 	w.WriteHeader(http.StatusOK)
 }
 
