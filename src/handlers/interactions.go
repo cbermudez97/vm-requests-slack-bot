@@ -190,7 +190,7 @@ func handleAcceptCallback(w http.ResponseWriter, r *http.Request, i slack.Intera
 	blocks = append(blocks, slack.NewSectionBlock(
 		slack.NewTextBlockObject(
 			slack.MarkdownType,
-			fmt.Sprintf("Accepted by <@%s>", i.User.ID),
+			fmt.Sprintf("*UPDATE*: Accepted by <@%s>", i.User.ID),
 			false,
 			false,
 		),
@@ -215,11 +215,51 @@ func handleAcceptCallback(w http.ResponseWriter, r *http.Request, i slack.Intera
 }
 
 func handleDenyCallback(w http.ResponseWriter, r *http.Request, i slack.InteractionCallback) {
-	log.Infof("VM Request Block: Denied")
+	api := getApi()
+	msgTs := i.Container.MessageTs
+	channelID := i.Container.ChannelID
 
-	// TODO: run denial workflow
+	// Get request data from message
+	requestMsg, err := getMessageFrom(api, channelID, msgTs)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-	// TODO: clear message buttons
+	_, err = parseRequestDataFrom(requestMsg)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// TODO: run denied workflow
+
+	// Clear message buttons
+	l := len(requestMsg.Blocks.BlockSet)
+	blocks := requestMsg.Blocks.BlockSet[:l-1]
+	blocks = append(blocks, slack.NewSectionBlock(
+		slack.NewTextBlockObject(
+			slack.MarkdownType,
+			fmt.Sprintf("*UPDATE*: Denied by <@%s>", i.User.ID),
+			false,
+			false,
+		),
+		nil,
+		nil,
+	))
+
+	_, _, _, err = api.UpdateMessage(
+		channelID,
+		msgTs,
+		slack.MsgOptionBlocks(blocks...),
+	)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	// TODO: notify user
 
