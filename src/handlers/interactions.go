@@ -79,18 +79,6 @@ func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, mod
 		acceptOrDenyBlockID,
 		slack.ButtonBlockElement{
 			Type:     slack.METButton,
-			ActionID: denyActionID,
-			Value:    denyActionValue,
-			Text: slack.NewTextBlockObject(
-				slack.PlainTextType,
-				denyActionText,
-				false,
-				false,
-			),
-			Style: slack.StyleDanger,
-		},
-		slack.ButtonBlockElement{
-			Type:     slack.METButton,
 			ActionID: acceptActionID,
 			Value:    acceptActionValue,
 			Text: slack.NewTextBlockObject(
@@ -100,6 +88,18 @@ func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, mod
 				false,
 			),
 			Style: slack.StylePrimary,
+		},
+		slack.ButtonBlockElement{
+			Type:     slack.METButton,
+			ActionID: denyActionID,
+			Value:    denyActionValue,
+			Text: slack.NewTextBlockObject(
+				slack.PlainTextType,
+				denyActionText,
+				false,
+				false,
+			),
+			Style: slack.StyleDanger,
 		},
 	)
 
@@ -146,17 +146,18 @@ func interactions(w http.ResponseWriter, r *http.Request) {
 func parseRequestDataFrom(message slack.Message) (VMRequestData, error) {
 	data := VMRequestData{}
 
-	if len(message.Blocks.BlockSet) < 1 {
-		return data, fmt.Errorf("Invalid message structure")
-	}
+	// FIXME: fix parsing
+	// if len(message.Blocks.BlockSet) < 1 {
+	// 	return data, fmt.Errorf("Invalid message structure")
+	// }
 
-	msgTextSection := message.Blocks.BlockSet[0]
-	switch msgTextSection.(type) {
-	case slack.SectionBlock:
-		// TODO: parse data from text
-	default:
-		return data, fmt.Errorf("Invalid message structure")
-	}
+	// msgTextSection := message.Blocks.BlockSet[0]
+	// switch msgTextSection.(type) {
+	// case slack.SectionBlock:
+	// 	// TODO: parse data from text
+	// default:
+	// 	return data, fmt.Errorf("Invalid message structure")
+	// }
 
 	return data, nil
 }
@@ -185,10 +186,22 @@ func handleAcceptCallback(w http.ResponseWriter, r *http.Request, i slack.Intera
 
 	// Clear message buttons
 	l := len(requestMsg.Blocks.BlockSet)
+	blocks := requestMsg.Blocks.BlockSet[:l-1]
+	blocks = append(blocks, slack.NewSectionBlock(
+		slack.NewTextBlockObject(
+			slack.MarkdownType,
+			fmt.Sprintf("Accepted by <@%s>", i.User.ID),
+			false,
+			false,
+		),
+		nil,
+		nil,
+	))
+
 	_, _, _, err = api.UpdateMessage(
 		channelID,
 		msgTs,
-		slack.MsgOptionBlocks(requestMsg.Blocks.BlockSet[:l-2]...),
+		slack.MsgOptionBlocks(blocks...),
 	)
 	if err != nil {
 		log.Error(err)
