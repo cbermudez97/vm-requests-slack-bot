@@ -22,7 +22,7 @@ func handleDenyCallback(w http.ResponseWriter, r *http.Request, i slack.Interact
 		return
 	}
 
-	_, err = parseRequestDataFrom(requestMsg)
+	requestData, err := parseRequestDataFrom(requestMsg)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -56,7 +56,27 @@ func handleDenyCallback(w http.ResponseWriter, r *http.Request, i slack.Interact
 		return
 	}
 
-	// TODO: notify user
+	// Notify user
+	_, _, err = api.PostMessage(
+		requestData.Requester,
+		slack.MsgOptionBlocks(
+			slack.NewSectionBlock(
+				slack.NewTextBlockObject(
+					slack.MarkdownType,
+					fmt.Sprintf("Your request have been denied by <@%s>.", i.User.ID),
+					false,
+					false,
+				),
+				nil,
+				nil,
+			),
+		),
+	)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }

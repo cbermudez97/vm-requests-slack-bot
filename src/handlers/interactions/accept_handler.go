@@ -29,8 +29,6 @@ func handleAcceptCallback(w http.ResponseWriter, r *http.Request, i slack.Intera
 		return
 	}
 
-	log.Info(requestData)
-
 	// TODO: run creation workflow
 
 	// Clear message buttons
@@ -58,7 +56,27 @@ func handleAcceptCallback(w http.ResponseWriter, r *http.Request, i slack.Intera
 		return
 	}
 
-	// TODO: notify user
+	// Notify user
+	_, _, err = api.PostMessage(
+		requestData.Requester,
+		slack.MsgOptionBlocks(
+			slack.NewSectionBlock(
+				slack.NewTextBlockObject(
+					slack.MarkdownType,
+					fmt.Sprintf("Your request have been accepted by <@%s>.", i.User.ID),
+					false,
+					false,
+				),
+				nil,
+				nil,
+			),
+		),
+	)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }
