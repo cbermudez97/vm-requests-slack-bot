@@ -14,7 +14,7 @@ const dispatcherEndpoint = "/events-endpoint"
 
 func dispatcher(w http.ResponseWriter, r *http.Request) {
 	// Verify signing secret
-	if err := verifySigningSecret(r); err != nil {
+	if err := VerifySigningSecret(r); err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -46,7 +46,7 @@ func dispatcher(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(r.Challenge))
 	}
 	if eventsAPIEvent.Type == slackevents.CallbackEvent { // Handle inner event
-		api := getApi()
+		api := GetApi()
 
 		innerEvent := eventsAPIEvent.InnerEvent
 		switch ev := innerEvent.Data.(type) {

@@ -11,8 +11,8 @@ import (
 	"github.com/slack-go/slack"
 )
 
-func verifySigningSecret(r *http.Request) error {
-	signingSecret := getSigningSecret()
+func VerifySigningSecret(r *http.Request) error {
+	signingSecret := GetSigningSecret()
 	verifier, err := slack.NewSecretsVerifier(r.Header, signingSecret)
 	if err != nil {
 		log.Error(err)
@@ -36,7 +36,7 @@ func verifySigningSecret(r *http.Request) error {
 	return nil
 }
 
-func getMessageFrom(api *slack.Client, channelID, messageTs string) (slack.Message, error) {
+func GetMessageFrom(api *slack.Client, channelID, messageTs string) (slack.Message, error) {
 	conversation, err := api.GetConversationHistory(&slack.GetConversationHistoryParameters{
 		ChannelID: channelID,
 		Latest:    messageTs,
@@ -55,18 +55,18 @@ func getMessageFrom(api *slack.Client, channelID, messageTs string) (slack.Messa
 	return msg, nil
 }
 
-func getSigningSecret() string {
+func GetSigningSecret() string {
 	return os.Getenv("SLACK_SIGNING_SECRET")
 }
 
-func getBotToken() string {
+func GetBotToken() string {
 	return os.Getenv("SLACK_BOT_TOKEN")
 }
 
-func getRequestsChannel() string {
+func GetRequestsChannel() string {
 	return os.Getenv("SLACK_REQUESTS_CHANNEL")
 }
 
-func getApi() *slack.Client {
-	return slack.New(getBotToken())
+func GetApi() *slack.Client {
+	return slack.New(GetBotToken())
 }

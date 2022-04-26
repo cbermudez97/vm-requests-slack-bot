@@ -15,19 +15,19 @@ const requestCommandStr = "/request-vm"
 const requestModalCallbackId = "request-modal"
 
 // Distribution block data
-const distBlockId = "dist"
-const distActionId = "DIST"
+const DistBlockId = "dist"
+const DistActionId = "DIST"
 
-var distOptions = []string{
+var DistOptions = []string{
 	"Ubuntu 20.04",
 	"Ubunut 18.04",
 }
 
 // VM type block data
-const vmTypeBlockId = "vm_type"
-const vmTypeActionId = "VM_TYPE"
+const VMTypeBlockId = "vm_type"
+const VMTypeActionId = "VM_TYPE"
 
-var vmTypeOptions = []string{
+var VMTypeOptions = []string{
 	"Linode 1",
 	"Linode 2",
 }
@@ -52,16 +52,16 @@ func buildVMRequestModal() slack.ModalViewRequest {
 	headerSection := slack.NewSectionBlock(headerText, nil, nil)
 
 	// Distribution input
-	distOptionsElems := createOptionBlockObjects(distOptions)
+	distOptionsElems := createOptionBlockObjects(DistOptions)
 	distText := slack.NewTextBlockObject(slack.PlainTextType, "Select a Distribution", false, false)
-	distOption := slack.NewOptionsSelectBlockElement(slack.OptTypeStatic, nil, distActionId, distOptionsElems...)
-	distBlock := slack.NewInputBlock(distBlockId, distText, distOption)
+	distOption := slack.NewOptionsSelectBlockElement(slack.OptTypeStatic, nil, DistActionId, distOptionsElems...)
+	distBlock := slack.NewInputBlock(DistBlockId, distText, distOption)
 
 	// VM Type input
-	vmTypeOptionsElems := createOptionBlockObjects(vmTypeOptions)
+	vmTypeOptionsElems := createOptionBlockObjects(VMTypeOptions)
 	vmTypeText := slack.NewTextBlockObject(slack.PlainTextType, "Select a VM Type", false, false)
-	vmTypeOption := slack.NewOptionsSelectBlockElement(slack.OptTypeStatic, nil, vmTypeActionId, vmTypeOptionsElems...)
-	vmTypeBlock := slack.NewInputBlock(vmTypeBlockId, vmTypeText, vmTypeOption)
+	vmTypeOption := slack.NewOptionsSelectBlockElement(slack.OptTypeStatic, nil, VMTypeActionId, vmTypeOptionsElems...)
+	vmTypeBlock := slack.NewInputBlock(VMTypeBlockId, vmTypeText, vmTypeOption)
 
 	// Additional details
 	// TODO: define additional details modal
@@ -88,7 +88,7 @@ func buildVMRequestModal() slack.ModalViewRequest {
 
 func requestsCreation(w http.ResponseWriter, r *http.Request) {
 	// Verify signing secret
-	if err := verifySigningSecret(r); err != nil {
+	if err := VerifySigningSecret(r); err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -104,7 +104,7 @@ func requestsCreation(w http.ResponseWriter, r *http.Request) {
 
 	// Handle command
 	if rCmd.Command == requestCommandStr {
-		api := getApi()
+		api := GetApi()
 
 		modalRequest := buildVMRequestModal()
 		_, err := api.OpenView(rCmd.TriggerID, modalRequest)
