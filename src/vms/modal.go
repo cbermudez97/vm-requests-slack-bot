@@ -30,7 +30,7 @@ func createNameInputBlock() *slack.InputBlock {
 	return slack.NewInputBlock(
 		VMNameBlockId,
 		slack.NewTextBlockObject(
-			slack.MarkdownType,
+			slack.PlainTextType,
 			"VM Name",
 			false,
 			false,
@@ -43,8 +43,8 @@ func createNameInputBlock() *slack.InputBlock {
 }
 
 // Distribution block data
-const OSBlockId = "os"
-const OSActionId = "OS"
+const OSBlockId = "vm_os"
+const OSActionId = "VM_OS"
 
 func createOSOptions() []*slack.OptionBlockObject {
 	optionBlockObjects := make([]*slack.OptionBlockObject, 0, len(SupportedOS))
@@ -177,7 +177,7 @@ func createPrivateIpBlock() *slack.OptionBlockObject {
 	return slack.NewOptionBlockObject(
 		VMPrivateIPValue,
 		slack.NewTextBlockObject(
-			slack.MarkdownType,
+			slack.PlainTextType,
 			"Use Private Ip",
 			false,
 			false,
@@ -190,7 +190,7 @@ func createAdditionalInputBlock() *slack.InputBlock {
 	return slack.NewInputBlock(
 		VMAdditionalBlockId,
 		slack.NewTextBlockObject(
-			slack.MarkdownType,
+			slack.PlainTextType,
 			"Additional",
 			false,
 			false,
