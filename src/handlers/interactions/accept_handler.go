@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/cbermudez97/vm-requests-slack-bot/src/handlers"
+	"github.com/cbermudez97/vm-requests-slack-bot/src/vms"
 	log "github.com/sirupsen/logrus"
 	"github.com/slack-go/slack"
 )
@@ -22,7 +23,7 @@ func handleAcceptCallback(w http.ResponseWriter, r *http.Request, i slack.Intera
 		return
 	}
 
-	requestData, err := parseRequestDataFrom(requestMsg)
+	requestData, err := vms.ParseRequestDataFrom(requestMsg)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -57,13 +58,20 @@ func handleAcceptCallback(w http.ResponseWriter, r *http.Request, i slack.Intera
 	}
 
 	// Notify user
+	requesterUser, err := api.GetUserInfo(requestData.Requester)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	_, _, err = api.PostMessage(
 		requestData.Requester,
 		slack.MsgOptionBlocks(
 			slack.NewSectionBlock(
 				slack.NewTextBlockObject(
 					slack.MarkdownType,
-					fmt.Sprintf("Your request have been accepted by <@%s>.", i.User.ID),
+					fmt.Sprintf(`Hi %s. Your request for the VM named "%s" have been accepted by <@%s>. I will send you more info upon it's creation.`, requesterUser.Name, requestData.Name, i.User.ID),
 					false,
 					false,
 				),

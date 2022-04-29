@@ -5,30 +5,15 @@ import (
 	"net/http"
 
 	"github.com/cbermudez97/vm-requests-slack-bot/src/handlers"
+	"github.com/cbermudez97/vm-requests-slack-bot/src/vms"
 	log "github.com/sirupsen/logrus"
 	"github.com/slack-go/slack"
 )
 
-func buildVMModalValues(i slack.InteractionCallback) VMRequestData {
-	dist := i.View.State.Values[handlers.DistBlockId][handlers.DistActionId].SelectedOption.Value
-	tier := i.View.State.Values[handlers.VMTypeBlockId][handlers.VMTypeActionId].SelectedOption.Value
-
-	return VMRequestData{
-		Requester:    i.User.ID,
-		Distribution: dist,
-		Type:         tier,
-	}
-}
-
-func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, modalValues VMRequestData) error {
+func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, modalValues vms.VMRequest) error {
 	requestsChannelId := handlers.GetRequestsChannel()
 
-	msgText := fmt.Sprintf(
-		"VM Request\n\nFrom: <@%s>\nDistribution: %s\nType: %s\n",
-		i.User.ID,
-		modalValues.Distribution,
-		modalValues.Type,
-	)
+	msgText := vms.BuildRequestNotificationMessage(modalValues)
 
 	// Build message block
 	messageBlock := slack.NewSectionBlock(
@@ -78,23 +63,33 @@ func sendChannelNotification(api *slack.Client, i slack.InteractionCallback, mod
 	return err
 }
 
-func sendUserNotification(api *slack.Client, i slack.InteractionCallback, modalValues VMRequestData) error {
+func sendUserNotification(api *slack.Client, i slack.InteractionCallback, modalValues vms.VMRequest) error {
 	msgText := fmt.Sprintf(
-		"Hi %s. Your request for a VM with:\n\nDistribution: %s\nType: %s\n\nhave been correctly created.",
+		`Hi %s. Your request for the VM named "%s" have been correctly created. I will notify you upon it's acceptance or denial.`,
 		i.User.Name,
-		modalValues.Distribution,
-		modalValues.Type,
+		modalValues.Name,
 	)
 
 	_, _, err := api.PostMessage(
 		i.User.ID,
-		slack.MsgOptionText(msgText, false),
+		slack.MsgOptionBlocks(
+			slack.NewSectionBlock(
+				slack.NewTextBlockObject(
+					slack.MarkdownType,
+					msgText,
+					false,
+					false,
+				),
+				nil,
+				nil,
+			),
+		),
 	)
 	return err
 }
 
 func handleRequestModal(w http.ResponseWriter, r *http.Request, i slack.InteractionCallback) {
-	modalValues := buildVMModalValues(i)
+	modalValues := vms.NewVMRequestFromModal(i)
 
 	api := handlers.GetApi()
 
@@ -113,4 +108,36 @@ func handleRequestModal(w http.ResponseWriter, r *http.Request, i slack.Interact
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func handleModalProviderChangedCallback(w http.ResponseWriter, r *http.Request, i slack.InteractionCallback) {
+	modalValues := vms.NewVMRequestFromModal(i)
+
+	api := handlers.GetApi()
+	// viewValues := i.View.State.Values
+	// if _, ok := viewValues[vms.VMTypeBlockId]; ok { // Modal have a previous selected provider
+	// 	// TODO: handle this case
+	// } else { // No previous selected provider
+	// Add types for new provider
+	provider, err := vms.FindProviderByValue(modalValues.Provider)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	modal := vms.BuildVMRequestModalWithTypes(*provider)
+
+	_, err = api.UpdateView(
+		modal,
+		i.View.ExternalID,
+		i.View.Hash,
+		i.View.ID,
+	)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// }
 }
