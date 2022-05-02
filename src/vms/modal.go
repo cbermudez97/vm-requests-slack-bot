@@ -86,22 +86,26 @@ func createProviderOptions() []*slack.OptionBlockObject {
 	return optionBlockObjects
 }
 
-func createProviderInputBlock() *slack.InputBlock {
-	return slack.NewInputBlock(
-		VMProviderBlockId,
+func createProviderInputBlock() *slack.SectionBlock {
+	section := slack.NewSectionBlock(
 		slack.NewTextBlockObject(
-			slack.PlainTextType,
-			"Select a Provider",
+			slack.MarkdownType,
+			"*Select a Provider*",
 			false,
 			false,
 		),
-		slack.NewOptionsSelectBlockElement(
-			slack.OptTypeStatic,
-			nil,
-			VMProviderActionId,
-			createProviderOptions()...,
+		nil,
+		slack.NewAccessory(
+			slack.NewOptionsSelectBlockElement(
+				slack.OptTypeStatic,
+				nil,
+				VMProviderActionId,
+				createProviderOptions()...,
+			),
 		),
 	)
+	section.BlockID = VMProviderBlockId
+	return section
 }
 
 // VM type block data
