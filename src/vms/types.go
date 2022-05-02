@@ -18,7 +18,7 @@ var AllTypes = [...]VMType{
 
 func SupportedTypesForProvider(provider VMProvider) []VMType {
 	n := len(AllTypes) / len(SupportedProviders)
-	providerVMTypes := make([]VMType, n)
+	providerVMTypes := make([]VMType, 0, n)
 
 	for _, vmType := range AllTypes {
 		if vmType.Provider.Value == provider.Value {
