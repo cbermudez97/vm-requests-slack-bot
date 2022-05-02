@@ -58,8 +58,8 @@ func createOSOptions() []*slack.OptionBlockObject {
 func createOSBlock() *slack.SectionBlock {
 	section := slack.NewSectionBlock(
 		slack.NewTextBlockObject(
-			slack.PlainTextType,
-			"Select a Distribution",
+			slack.MarkdownType,
+			"*Select a Distribution*",
 			false,
 			false,
 		),
@@ -129,8 +129,8 @@ func createTypeOptions(provider VMProvider) []*slack.OptionBlockObject {
 func createTypeBlock(provider VMProvider) *slack.SectionBlock {
 	section := slack.NewSectionBlock(
 		slack.NewTextBlockObject(
-			slack.PlainTextType,
-			"Select Type",
+			slack.MarkdownType,
+			"*Select Type*",
 			false,
 			false,
 		),
@@ -164,8 +164,8 @@ func createRegionOptions() []*slack.OptionBlockObject {
 func createRegionBlock() *slack.SectionBlock {
 	section := slack.NewSectionBlock(
 		slack.NewTextBlockObject(
-			slack.PlainTextType,
-			"Select a Region",
+			slack.MarkdownType,
+			"*Select a Region*",
 			false,
 			false,
 		),
@@ -205,8 +205,8 @@ func createPrivateIpBlock() *slack.OptionBlockObject {
 func createAdditionalInputBlock() *slack.SectionBlock {
 	section := slack.NewSectionBlock(
 		slack.NewTextBlockObject(
-			slack.PlainTextType,
-			"Additional",
+			slack.MarkdownType,
+			"*Additional*",
 			false,
 			false,
 		),
