@@ -26,7 +26,7 @@ func createHeader() *slack.SectionBlock {
 const VMNameBlockId = "vm_name"
 const VMNameActionId = "VM_NAME"
 
-func createNameInputBlock() *slack.InputBlock {
+func createNameBlock() *slack.InputBlock {
 	return slack.NewInputBlock(
 		VMNameBlockId,
 		slack.NewTextBlockObject(
@@ -55,22 +55,26 @@ func createOSOptions() []*slack.OptionBlockObject {
 	return optionBlockObjects
 }
 
-func createOSInputBlock() *slack.InputBlock {
-	return slack.NewInputBlock(
-		OSBlockId,
+func createOSBlock() *slack.SectionBlock {
+	section := slack.NewSectionBlock(
 		slack.NewTextBlockObject(
 			slack.PlainTextType,
 			"Select a Distribution",
 			false,
 			false,
 		),
-		slack.NewOptionsSelectBlockElement(
-			slack.OptTypeStatic,
-			nil,
-			OSActionId,
-			createOSOptions()...,
+		nil,
+		slack.NewAccessory(
+			slack.NewOptionsSelectBlockElement(
+				slack.OptTypeStatic,
+				nil,
+				OSActionId,
+				createOSOptions()...,
+			),
 		),
 	)
+	section.BlockID = OSBlockId
+	return section
 }
 
 // VM provider block data
@@ -86,7 +90,7 @@ func createProviderOptions() []*slack.OptionBlockObject {
 	return optionBlockObjects
 }
 
-func createProviderInputBlock() *slack.SectionBlock {
+func createProviderBlock() *slack.SectionBlock {
 	section := slack.NewSectionBlock(
 		slack.NewTextBlockObject(
 			slack.MarkdownType,
@@ -122,22 +126,26 @@ func createTypeOptions(provider VMProvider) []*slack.OptionBlockObject {
 	return optionBlockObjects
 }
 
-func createTypeBlock(provider VMProvider) *slack.InputBlock {
-	return slack.NewInputBlock(
-		VMTypeBlockId,
+func createTypeBlock(provider VMProvider) *slack.SectionBlock {
+	section := slack.NewSectionBlock(
 		slack.NewTextBlockObject(
 			slack.PlainTextType,
 			"Select Type",
 			false,
 			false,
 		),
-		slack.NewOptionsSelectBlockElement(
-			slack.OptTypeStatic,
-			nil,
-			VMTypeActionId,
-			createTypeOptions(provider)...,
+		nil,
+		slack.NewAccessory(
+			slack.NewOptionsSelectBlockElement(
+				slack.OptTypeStatic,
+				nil,
+				VMTypeActionId,
+				createTypeOptions(provider)...,
+			),
 		),
 	)
+	section.BlockID = VMTypeBlockId
+	return section
 }
 
 // VM region block data
@@ -153,22 +161,26 @@ func createRegionOptions() []*slack.OptionBlockObject {
 	return optionBlockObjects
 }
 
-func createRegionInputBlock() *slack.InputBlock {
-	return slack.NewInputBlock(
-		VMRegionBlockId,
+func createRegionBlock() *slack.SectionBlock {
+	section := slack.NewSectionBlock(
 		slack.NewTextBlockObject(
 			slack.PlainTextType,
 			"Select a Region",
 			false,
 			false,
 		),
-		slack.NewOptionsSelectBlockElement(
-			slack.OptTypeStatic,
-			nil,
-			VMRegionActionId,
-			createRegionOptions()...,
+		nil,
+		slack.NewAccessory(
+			slack.NewOptionsSelectBlockElement(
+				slack.OptTypeStatic,
+				nil,
+				VMRegionActionId,
+				createRegionOptions()...,
+			),
 		),
 	)
+	section.BlockID = VMRegionBlockId
+	return section
 }
 
 // VM Additional block data
@@ -190,20 +202,24 @@ func createPrivateIpBlock() *slack.OptionBlockObject {
 	)
 }
 
-func createAdditionalInputBlock() *slack.InputBlock {
-	return slack.NewInputBlock(
-		VMAdditionalBlockId,
+func createAdditionalInputBlock() *slack.SectionBlock {
+	section := slack.NewSectionBlock(
 		slack.NewTextBlockObject(
 			slack.PlainTextType,
 			"Additional",
 			false,
 			false,
 		),
-		slack.NewCheckboxGroupsBlockElement(
-			VMAdditionalActionId,
-			createPrivateIpBlock(),
+		nil,
+		slack.NewAccessory(
+			slack.NewCheckboxGroupsBlockElement(
+				VMAdditionalActionId,
+				createPrivateIpBlock(),
+			),
 		),
 	)
+	section.BlockID = VMAdditionalBlockId
+	return section
 }
 
 func BuildVMRequestModal() slack.ModalViewRequest {
@@ -214,13 +230,13 @@ func BuildVMRequestModal() slack.ModalViewRequest {
 	// Header section
 	headerSection := createHeader()
 	// Name input
-	vmNameBlock := createNameInputBlock()
+	vmNameBlock := createNameBlock()
 	// OS input
-	vmOSBlock := createOSInputBlock()
+	vmOSBlock := createOSBlock()
 	// Provider input
-	vmProviderBlock := createProviderInputBlock()
+	vmProviderBlock := createProviderBlock()
 	// Region input
-	vmRegionBlock := createRegionInputBlock()
+	vmRegionBlock := createRegionBlock()
 	// Additional inputs
 	vmAdditionalBlock := createAdditionalInputBlock()
 	// Blocks
@@ -254,15 +270,15 @@ func BuildVMRequestModalWithTypes(provider VMProvider) slack.ModalViewRequest {
 	// Header section
 	headerSection := createHeader()
 	// Name input
-	vmNameBlock := createNameInputBlock()
+	vmNameBlock := createNameBlock()
 	// OS input
-	vmOSBlock := createOSInputBlock()
+	vmOSBlock := createOSBlock()
 	// Provider input
-	vmProviderBlock := createProviderInputBlock()
+	vmProviderBlock := createProviderBlock()
 	// Type input
 	vmTypeBlock := createTypeBlock(provider)
 	// Region input
-	vmRegionBlock := createRegionInputBlock()
+	vmRegionBlock := createRegionBlock()
 	// Additional inputs
 	vmAdditionalBlock := createAdditionalInputBlock()
 	// Blocks
